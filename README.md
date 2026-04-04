@@ -36,36 +36,32 @@
 ## 构建步骤
 
 1. 安装并初始化 vcpkg。
-2. 设置环境变量：
+2. 设置环境变量，将 `VCPKG_ROOT` 指向你本地的 vcpkg 安装目录：
 
    ```powershell
-   $env:VCPKG_ROOT="C:\Users\dinju\tools\vcpkg"
+   $env:VCPKG_ROOT="<your-vcpkg-path>"
    ```
 
    这一步必须和后面的 `cmake --preset ...` 在同一个终端会话里执行；如果你开了新终端，需要重新设置。
 
-   如果你不想依赖环境变量，也可以使用项目里的 `CMakeUserPresets.json`（已为当前机器写入本机路径），或者参考 `CMakeUserPresets.json.example` 自己调整。
+   如果你不想依赖环境变量，可以复制 `CMakeUserPresets.json.example` 为 `CMakeUserPresets.json`，将其中的 vcpkg 路径改为你的本地路径。
 
-   对于中文本地化的 Visual Studio / MSVC，仓库 preset 已额外设置 `VSLANG=1033`。如果 FFmpeg 仍然因为生成的 `config.h` 中出现中文 `CC_IDENT` 而失败（本机曾在 `vsrc_gfxcapture_winrt.cpp` 触发），当前机器已通过本地 vcpkg 端口补丁禁用 `gfxcapture` 滤镜绕过该问题；这个滤镜用于屏幕捕获，不影响本播放器学习项目的本地媒体播放。
+   对于中文本地化的 Visual Studio / MSVC，仓库 preset 已额外设置 `VSLANG=1033`。如果 FFmpeg 因为生成的 `config.h` 中出现中文 `CC_IDENT` 而编译失败，可以尝试通过本地 vcpkg 端口补丁禁用相关滤镜绕过。
 
 3. 在项目根目录执行：
 
    ```powershell
-   # 当前这台机器推荐：Visual Studio 2026 + local preset
-   cmake --preset msvc2026-debug-local
-   cmake --build --preset build-msvc2026-debug-local
+   # Visual Studio 2026
+   cmake --preset msvc2026-debug
+   cmake --build --preset build-msvc2026-debug
 
-   # 如果当前终端还没有刷新到 VCPKG_ROOT，可直接使用不依赖环境变量的 local preset：
-   # cmake --preset msvc2022-debug-local
-   # cmake --build --preset build-msvc2022-debug-local
+   # Visual Studio 2022
+   # cmake --preset msvc2022-debug
+   # cmake --build --preset build-msvc2022-debug
 
-   # 如果你的机器安装的是 VS 2022，则改用：
-   # cmake --preset msvc2022-debug-local
-   # cmake --build --preset build-msvc2022-debug-local
-
-   # 如果当前终端已正确拿到 VCPKG_ROOT，也可以改用：
-   # cmake --preset msvc2026-debug
-   # cmake --build --preset build-msvc2026-debug
+   # 如果使用 CMakeUserPresets.json 中的 local preset（不依赖环境变量）：
+   # cmake --preset msvc2026-debug-local
+   # cmake --build --preset build-msvc2026-debug-local
    ```
 
 4. 运行生成的程序：
