@@ -1,0 +1,10 @@
+{
+  "name": "sdlplayer",
+  "version-string": "0.1.0",
+  "builtin-baseline": "b5d1a94fb7f88fd835e360fd23a45a09ceedbf48",
+  "dependencies": [
+    "ffmpeg",
+    "sdl2",
+    "sdl2-ttf"
+  ]
+}

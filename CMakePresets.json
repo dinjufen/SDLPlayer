@@ -1,0 +1,76 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vcpkg-base",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "$env{VCPKG_ROOT}",
+        "rhs": ""
+      },
+      "environment": {
+        "VSLANG": "1033"
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_FEATURE_FLAGS": "manifests"
+      }
+    },
+    {
+      "name": "msvc2026-debug",
+      "inherits": "vcpkg-base",
+      "displayName": "MSVC 2026 Debug",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build/msvc2026-debug"
+    },
+    {
+      "name": "msvc2026-release",
+      "inherits": "vcpkg-base",
+      "displayName": "MSVC 2026 Release",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build/msvc2026-release"
+    },
+    {
+      "name": "msvc2022-debug",
+      "inherits": "vcpkg-base",
+      "displayName": "MSVC 2022 Debug",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/msvc2022-debug"
+    },
+    {
+      "name": "msvc2022-release",
+      "inherits": "vcpkg-base",
+      "displayName": "MSVC 2022 Release",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/msvc2022-release"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-msvc2026-debug",
+      "configurePreset": "msvc2026-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-msvc2026-release",
+      "configurePreset": "msvc2026-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "build-msvc2022-debug",
+      "configurePreset": "msvc2022-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "build-msvc2022-release",
+      "configurePreset": "msvc2022-release",
+      "configuration": "Release"
+    }
+  ]
+}
