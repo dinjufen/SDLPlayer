@@ -39,7 +39,7 @@ constexpr std::size_t kMaxQueuedVideoFrames = 24;
 constexpr double kSeekClampMarginSeconds = 0.1;
 constexpr double kVideoDisplayLeewaySeconds = 0.04;
 
-const std::vector<double> kSupportedSpeeds = {0.5, 1.0, 1.25, 1.5, 2.0};
+const std::vector<double> kSupportedSpeeds = {0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0};
 
 std::string AvErrorToString(const int errorCode) {
     char buffer[AV_ERROR_MAX_STRING_SIZE] = {};
