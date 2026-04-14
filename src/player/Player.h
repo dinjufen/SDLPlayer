@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct SDL_Renderer;
 struct SDL_Rect;
@@ -49,6 +50,8 @@ public:
     void DecreaseSpeed();
     void SetSpeed(double speed);
     double GetSpeed() const;
+
+    static std::vector<double> GetSupportedSpeeds();
 
     bool HasMedia() const;
     double GetPositionSeconds() const;
