@@ -80,7 +80,7 @@ The codebase has two layers in three source files:
 - Audio output: 48 kHz, stereo, S16
 - Max audio queue: 3000 ms
 - Max video queue: 24 frames
-- Supported speeds: 0.5, 1.0, 1.25, 1.5, 2.0
+- Supported speeds: 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
 
 ## Dependencies (via vcpkg manifest)
 - `sdl2` (2.30+)

@@ -980,6 +980,8 @@ void Player::SetSpeed(const double speed) { impl_->SetSpeed(speed); }
 
 double Player::GetSpeed() const { return impl_->GetSpeed(); }
 
+std::vector<double> Player::GetSupportedSpeeds() { return kSupportedSpeeds; }
+
 bool Player::HasMedia() const { return impl_->HasMedia(); }
 
 double Player::GetPositionSeconds() const { return impl_->GetPositionSeconds(); }

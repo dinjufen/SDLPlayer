@@ -9,6 +9,7 @@
 #include <shellapi.h>
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <iomanip>
 #include <optional>
@@ -225,7 +226,7 @@ int main(int argc, char* argv[]) {
     bool draggingProgress = false;
     double draggingRatio = 0.0;
     bool showSpeedMenu = false;
-    const std::vector<double> speedOptions = {0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0};
+    const std::vector<double> speedOptions = player::Player::GetSupportedSpeeds();
 
     auto openSelection = [&player, &bannerText](const std::string& path) {
         std::string errorMessage;
@@ -251,6 +252,7 @@ int main(int argc, char* argv[]) {
         std::ostringstream speedLabel;
         speedLabel << std::fixed << std::setprecision(2) << player.GetSpeed() << "x";
         const UiButton speedButton{{windowWidth - 164, windowHeight - 96, 140, 40}, speedLabel.str()};
+        const int speedItemStep = speedButton.rect.h + 5;
 
         SDL_Event event;
         while (SDL_PollEvent(&event) != 0) {
@@ -297,32 +299,35 @@ int main(int argc, char* argv[]) {
                 const int mouseX = event.button.x;
                 const int mouseY = event.button.y;
 
-                if (PointInRect(mouseX, mouseY, openButton.rect)) {
-                    if (const auto selection = ShowOpenMediaFileDialog(); selection.has_value()) {
-                        openSelection(*selection);
-                    }
-                } else if (PointInRect(mouseX, mouseY, playButton.rect)) {
-                    player.TogglePause();
-                } else if (PointInRect(mouseX, mouseY, speedButton.rect)) {
-                    showSpeedMenu = !showSpeedMenu;
-                } else if (showSpeedMenu) {
-                    // Check if clicking on speed menu items
-                    bool foundSpeedSelection = false;
+                const bool menuWasOpen = showSpeedMenu;
+                bool handledBySpeedMenu = false;
+                if (showSpeedMenu) {
+                    showSpeedMenu = false;
                     for (size_t i = 0; i < speedOptions.size(); ++i) {
-                        const SDL_Rect speedItemRect = {speedButton.rect.x, speedButton.rect.y - static_cast<int>(speedOptions.size() - i) * 45, 140, 40};
-                        if (PointInRect(mouseX, mouseY, speedItemRect)) {
+                        const SDL_Rect itemRect = {speedButton.rect.x,
+                                                   speedButton.rect.y - static_cast<int>(speedOptions.size() - i) * speedItemStep,
+                                                   speedButton.rect.w, speedButton.rect.h};
+                        if (PointInRect(mouseX, mouseY, itemRect)) {
                             player.SetSpeed(speedOptions[i]);
-                            showSpeedMenu = false;
-                            foundSpeedSelection = true;
+                            handledBySpeedMenu = true;
                             break;
                         }
                     }
-                    if (!foundSpeedSelection) {
-                        showSpeedMenu = false;
+                }
+
+                if (!handledBySpeedMenu) {
+                    if (PointInRect(mouseX, mouseY, openButton.rect)) {
+                        if (const auto selection = ShowOpenMediaFileDialog(); selection.has_value()) {
+                            openSelection(*selection);
+                        }
+                    } else if (PointInRect(mouseX, mouseY, playButton.rect)) {
+                        player.TogglePause();
+                    } else if (PointInRect(mouseX, mouseY, speedButton.rect)) {
+                        showSpeedMenu = !menuWasOpen;
+                    } else if (PointInRect(mouseX, mouseY, progressRect) && player.GetDurationSeconds() > 0.0) {
+                        draggingProgress = true;
+                        draggingRatio = ClampRatio(static_cast<double>(mouseX - progressRect.x) / progressRect.w);
                     }
-                } else if (PointInRect(mouseX, mouseY, progressRect) && player.GetDurationSeconds() > 0.0) {
-                    draggingProgress = true;
-                    draggingRatio = ClampRatio(static_cast<double>(mouseX - progressRect.x) / progressRect.w);
                 }
             }
 
@@ -376,26 +381,18 @@ int main(int argc, char* argv[]) {
         // Draw speed menu if open
         if (showSpeedMenu) {
             for (size_t i = 0; i < speedOptions.size(); ++i) {
-                const SDL_Rect speedItemRect = {speedButton.rect.x, speedButton.rect.y - static_cast<int>(speedOptions.size() - i) * 45, 140, 40};
-                const double currentSpeed = player.GetSpeed();
+                const SDL_Rect itemRect = {speedButton.rect.x,
+                                           speedButton.rect.y - static_cast<int>(speedOptions.size() - i) * speedItemStep,
+                                           speedButton.rect.w, speedButton.rect.h};
                 const double speed = speedOptions[i];
-                const bool isCurrentSpeed = std::abs(currentSpeed - speed) < 0.01;
-                
-                const SDL_Color bgColor = isCurrentSpeed ? SDL_Color{52, 93, 176, 255} : SDL_Color{40, 47, 58, 255};
-                const SDL_Color textColor = isCurrentSpeed ? SDL_Color{245, 248, 252, 255} : SDL_Color{240, 243, 247, 255};
-                
+                const bool isCurrentSpeed = std::fabs(player.GetSpeed() - speed) < 0.01;
+
                 std::ostringstream speedOptionLabel;
                 speedOptionLabel << std::fixed << std::setprecision(2) << speed << "x";
-                
-                FillRect(renderer, speedItemRect, bgColor);
-                DrawRect(renderer, speedItemRect, SDL_Color{70, 82, 94, 255});
-                
-                int textWidth = 0;
-                int textHeight = 0;
-                TTF_SizeUTF8(font, speedOptionLabel.str().c_str(), &textWidth, &textHeight);
-                const int textX = speedItemRect.x + (speedItemRect.w - textWidth) / 2;
-                const int textY = speedItemRect.y + (speedItemRect.h - textHeight) / 2;
-                DrawText(renderer, font, speedOptionLabel.str(), textX, textY, textColor);
+
+                const SDL_Color bgColor = isCurrentSpeed ? SDL_Color{52, 93, 176, 255} : SDL_Color{40, 47, 58, 255};
+                const SDL_Color textColor = isCurrentSpeed ? SDL_Color{245, 248, 252, 255} : SDL_Color{240, 243, 247, 255};
+                DrawButton(renderer, font, UiButton{itemRect, speedOptionLabel.str()}, bgColor, textColor);
             }
         }
 
