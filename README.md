@@ -64,7 +64,20 @@
    # cmake --build --preset build-msvc2026-debug-local
    ```
 
-4. 运行生成的程序：
+4. 运行自动化测试：
+
+   ```powershell
+   # Visual Studio 2026
+   ctest --preset test-msvc2026-debug
+
+   # Visual Studio 2022
+   # ctest --preset test-msvc2022-debug
+
+   # 如果使用 local preset：
+   # ctest --preset test-msvc2026-debug-local
+   ```
+
+5. 运行生成的程序：
 
    ```powershell
    # Visual Studio 2026
@@ -107,9 +120,16 @@
 - 仅音频模式占位界面
 - 基础错误提示和状态展示
 
+## 自动化测试
+
+项目通过 CTest 注册 `SDLPlayerTests` 测试可执行文件。当前测试覆盖播放器核心在无媒体状态下的初始状态、控制调用、倍速选择，以及打开不存在文件时的错误返回路径。
+
+测试目标不需要真实媒体样片，也不会创建 SDL 窗口；它复用 `SDLPlayerCore`，用于在后续拆分 UI 与播放器模块时守住基础状态机行为。
+
 ## 后续建议
 
 - 为 `m3u8/HLS` 补充网络打开入口和协议层校验
+- 补充带样片的媒体打开、seek、EOF 与纯音频回归测试
 - 增强音视频同步策略
 - 增加播放列表、音量控制、帧步进等功能
 - 进一步拆分 UI 与核心播放器模块

@@ -733,8 +733,10 @@ struct Player::Impl {
         }
 
         const int64_t delay = swr_get_delay(swrContext, frame->sample_rate);
-        const int maxOutputSamples =
+        const int64_t maxOutputSamples64 =
             av_rescale_rnd(delay + frame->nb_samples, outputRate, frame->sample_rate, AV_ROUND_UP);
+        const int maxOutputSamples = static_cast<int>(std::min<int64_t>(
+            maxOutputSamples64, std::numeric_limits<int>::max() / (kAudioDeviceChannels * kAudioBytesPerSample)));
         const int outputBufferBytes = maxOutputSamples * kAudioDeviceChannels * kAudioBytesPerSample;
 
         AudioChunk chunk;

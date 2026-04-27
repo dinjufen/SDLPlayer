@@ -72,5 +72,39 @@
       "configurePreset": "msvc2022-release",
       "configuration": "Release"
     }
+  ],
+  "testPresets": [
+    {
+      "name": "test-msvc2026-debug",
+      "configurePreset": "msvc2026-debug",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-msvc2026-release",
+      "configurePreset": "msvc2026-release",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-msvc2022-debug",
+      "configurePreset": "msvc2022-debug",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-msvc2022-release",
+      "configurePreset": "msvc2022-release",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
   ]
 }
