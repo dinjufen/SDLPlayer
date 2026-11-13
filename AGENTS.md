@@ -4,11 +4,11 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-SDLPlayer is a learning-oriented C++ media player for Windows, built with SDL2 + FFmpeg. It supports local video/audio file playback with a self-drawn SDL UI. The project targets Windows + MSVC exclusively and uses C++20.
+SDLPlayer is a learning-oriented C++ media player for Windows and macOS, built with SDL2 + FFmpeg. It supports local video/audio file playback with a self-drawn SDL UI. The FFmpeg player core is shared; platform dialogs/fonts and SDL audio/video output live behind thin interfaces so a later Qt 6 QML shell can replace the current UI. The project uses C++20.
 
 ## Build Commands
 
-Prerequisites: Visual Studio 2022 or 2026, CMake 3.25+, vcpkg.
+Prerequisites: CMake 3.25+, vcpkg. Windows uses Visual Studio 2022 or 2026; macOS uses Apple Clang + Ninja (Apple Silicon first).
 
 ```powershell
 # Set VCPKG_ROOT (required per terminal session, unless using local presets)
@@ -33,7 +33,16 @@ cmake --build --preset build-msvc2026-release
 ctest --preset test-msvc2026-debug
 ```
 
-To avoid the `VCPKG_ROOT` environment variable, copy `CMakeUserPresets.json.example` to `CMakeUserPresets.json` and set the vcpkg path, then use the `-local` preset variants (e.g. `msvc2026-debug-local`).
+```bash
+# macOS Apple Silicon
+export VCPKG_ROOT="<your-vcpkg-path>"
+cmake --preset macos-arm64-debug
+cmake --build --preset build-macos-arm64-debug
+ctest --preset test-macos-arm64-debug
+./build/macos-arm64-debug/SDLPlayer [path-to-media-file]
+```
+
+To avoid the `VCPKG_ROOT` environment variable, copy `CMakeUserPresets.json.example` to `CMakeUserPresets.json` and set the vcpkg path, then use the `-local` preset variants (e.g. `msvc2026-debug-local` or `macos-arm64-debug-local`).
 
 For Chinese-localized MSVC, presets set `VSLANG=1033` to force English. If FFmpeg fails to compile due to Chinese characters in `config.h`'s `CC_IDENT`, patch the vcpkg port to disable the offending filter.
 
@@ -41,19 +50,29 @@ Automated tests are configured through CTest. `SDLPlayerTests` is a lightweight 
 
 ## Architecture
 
-The codebase has two layers in three source files:
+The codebase keeps a portable player core and a replaceable SDL shell:
 
 ### UI layer (`src/main.cpp`)
 - SDL window creation, event loop, and all rendering (buttons, progress bar, text, video viewport)
-- Win32 file-open dialog via `GetOpenFileNameW`
-- Loads system fonts (msyh.ttc / segoeui.ttf / arial.ttf) via SDL_ttf
+- Applies HiDPI/Retina mapping via `ui::ApplyWindowLogicalScale` so layout and mouse events stay in window coordinates
 - Handles keyboard shortcuts and mouse interaction (progress bar drag-to-seek)
-- Accepts an optional command-line argument (`argv[1]`) to open a file on launch
+- Accepts an optional command-line media path on launch
 - Calls into `player::Player` for all media operations
+
+### Platform shims (`src/platform/`)
+- `ShowOpenMediaFileDialog`, `OpenUiFont`, and `CommandLineMediaPath` are implemented per OS (Win32 / NSOpenPanel / Linux zenity fallback)
+- Fonts come from system paths (Windows: msyh / segoeui / arial; macOS: PingFang / Heiti / Helvetica / SF). Do not copy vendor fonts into the repo.
+- Keep `#ifdef` out of the event loop; add new platform files instead.
+
+### Output interfaces (`src/player/IAudioOutput.h`, `src/player/IVideoOutput.h`)
+- Player talks only to these interfaces, not to `SDL_Renderer` or SDL audio APIs
+- Current backends are `src/output/SdlAudioOutput` and `src/output/SdlVideoOutput`
+- Do not add a Qt backend until Phase 2
 
 ### Player engine (`src/player/Player.h` + `src/player/Player.cpp`)
 - Public API: `Player` class using the pimpl idiom (`Player::Impl`)
-- `Player::Impl` contains all FFmpeg and SDL audio state, queues, and threading logic
+- `SetAudioOutput` / `SetVideoOutput` inject backends; tests can construct a `Player` with no outputs
+- `Player::Impl` contains all FFmpeg state, queues, and threading logic
 
 ### Tests (`tests/player/PlayerTests.cpp`)
 - CTest entry point registered as `SDLPlayerTests`
@@ -63,7 +82,7 @@ The codebase has two layers in three source files:
 **Threading model (3 threads):**
 1. **Main thread** — SDL event loop, UI drawing, calls `Player::Update()` to select the video frame closest to the audio clock
 2. **Worker thread** (`DecodeLoop`) — reads packets via `av_read_frame`, decodes audio/video, resamples/converts, pushes to queues; also handles seek execution
-3. **SDL audio callback** (`FillAudioBuffer`) — pulls PCM from the audio queue and drives the master clock
+3. **Audio output callback** (`IAudioOutput` → `FillAudioBuffer`) — pulls PCM from the audio queue and drives the master clock
 
 **Locking discipline:** Four mutexes in `Player::Impl` — `audioMutex` (audio queue), `videoMutex` (video queue + displayed frame), `clockMutex` (no-audio wall-clock anchor), `stateMutex` (status text). The audio callback acquires only `audioMutex`. Never hold two of these simultaneously except `audioMutex` + `videoMutex` in `QueuesDrained()` (always in that order).
 
@@ -88,18 +107,19 @@ The codebase has two layers in three source files:
 - Audio output: 48 kHz, stereo, S16
 - Max audio queue: 3000 ms
 - Max video queue: 24 frames
-- Supported speeds: 0.5, 1.0, 1.25, 1.5, 2.0
+- Supported speeds: 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
 
 ## Dependencies (via vcpkg manifest)
 - `sdl2` (2.30+)
 - `sdl2-ttf`
 - `ffmpeg` (7.x) — libavformat, libavcodec, libswresample, libswscale, libavutil
-- `comdlg32` (Win32, linked directly)
+- `comdlg32` (Win32 only, linked behind `if(WIN32)`)
+- AppKit (macOS only, for `NSOpenPanel`)
 
 ## Conventions
 - All FFmpeg headers are included inside `extern "C" {}` blocks in Player.cpp
-- MSVC compiler flags: `/W4 /permissive- /utf-8`
-- The project builds as a `WIN32` executable (no console window)
+- MSVC compiler flags: `/W4 /permissive- /utf-8`; other compilers use `-Wall -Wextra -Wpedantic`
+- The Windows executable is a `WIN32` (no-console) target; macOS currently builds a raw binary, not an `.app` bundle
 - `CMakeUserPresets.json` is gitignored (per-developer local config)
 - The `player` namespace contains all engine code; anonymous namespaces are used for file-local helpers
 - Design docs live in `docs/` (design.md, support-matrix.md)

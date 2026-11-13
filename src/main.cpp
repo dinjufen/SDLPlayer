@@ -1,23 +1,21 @@
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-
 #include <SDL.h>
 #include <SDL_ttf.h>
-#include <windows.h>
-#include <commdlg.h>
-#include <shellapi.h>
 
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <iomanip>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "output/SdlAudioOutput.h"
+#include "output/SdlVideoOutput.h"
+#include "platform/Platform.h"
 #include "player/Player.h"
+#include "ui/SdlHiDpi.h"
 
 namespace {
 
@@ -25,54 +23,6 @@ struct UiButton {
     SDL_Rect rect{};
     std::string label;
 };
-
-std::string WideToUtf8(const std::wstring& value) {
-    if (value.empty()) {
-        return {};
-    }
-
-    const int size = WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, nullptr, 0, nullptr, nullptr);
-    std::string utf8(static_cast<std::size_t>(size), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), -1, utf8.data(), size, nullptr, nullptr);
-    utf8.pop_back();
-    return utf8;
-}
-
-std::optional<std::string> ShowOpenMediaFileDialog() {
-    std::vector<wchar_t> pathBuffer(4096, L'\0');
-    const wchar_t filter[] =
-        L"Media Files\0*.mp4;*.m4v;*.mkv;*.mov;*.avi;*.flv;*.mp3;*.aac;*.wav;*.m3u8\0All Files\0*.*\0\0";
-
-    OPENFILENAMEW dialog = {};
-    dialog.lStructSize = sizeof(dialog);
-    dialog.lpstrFilter = filter;
-    dialog.lpstrFile = pathBuffer.data();
-    dialog.nMaxFile = static_cast<DWORD>(pathBuffer.size());
-    dialog.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
-    dialog.lpstrTitle = L"Open media";
-
-    if (!GetOpenFileNameW(&dialog)) {
-        return std::nullopt;
-    }
-
-    return WideToUtf8(pathBuffer.data());
-}
-
-TTF_Font* OpenUiFont() {
-    const std::vector<std::string> candidates = {
-        "C:\\Windows\\Fonts\\msyh.ttc",
-        "C:\\Windows\\Fonts\\segoeui.ttf",
-        "C:\\Windows\\Fonts\\arial.ttf",
-    };
-
-    for (const std::string& candidate : candidates) {
-        if (TTF_Font* font = TTF_OpenFont(candidate.c_str(), 18); font != nullptr) {
-            return font;
-        }
-    }
-
-    return nullptr;
-}
 
 std::string FormatTime(const double seconds) {
     const int total = std::max(0, static_cast<int>(seconds));
@@ -203,19 +153,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    TTF_Font* font = OpenUiFont();
+    ui::ApplyWindowLogicalScale(window, renderer);
+
+    TTF_Font* font = platform::OpenUiFont();
     if (font == nullptr) {
         SDL_Log("Failed to load a system font: %s", TTF_GetError());
     }
 
     player::Player player;
-    std::string bannerText = "Press O to open a media file.";
+    player.SetAudioOutput(std::make_unique<player::SdlAudioOutput>());
+    player.SetVideoOutput(std::make_unique<player::SdlVideoOutput>(renderer));
 
-    int wideArgCount = 0;
-    LPWSTR* wideArguments = CommandLineToArgvW(GetCommandLineW(), &wideArgCount);
-    if (wideArguments != nullptr && wideArgCount > 1) {
+    std::string bannerText = "Press O to open a media file.";
+    if (const auto mediaPath = platform::CommandLineMediaPath(argc, argv); mediaPath.has_value()) {
         std::string errorMessage;
-        if (player.Open(WideToUtf8(wideArguments[1]), errorMessage)) {
+        if (player.Open(*mediaPath, errorMessage)) {
             bannerText = "Opened from command line.";
         } else {
             bannerText = errorMessage;
@@ -238,6 +190,8 @@ int main(int argc, char* argv[]) {
     };
 
     while (running) {
+        ui::ApplyWindowLogicalScale(window, renderer);
+
         int windowWidth = 0;
         int windowHeight = 0;
         SDL_GetWindowSize(window, &windowWidth, &windowHeight);
@@ -271,7 +225,7 @@ int main(int argc, char* argv[]) {
                         }
                         break;
                     case SDLK_o: {
-                        if (const auto selection = ShowOpenMediaFileDialog(); selection.has_value()) {
+                        if (const auto selection = platform::ShowOpenMediaFileDialog(); selection.has_value()) {
                             openSelection(*selection);
                         }
                         break;
@@ -317,7 +271,7 @@ int main(int argc, char* argv[]) {
 
                 if (!handledBySpeedMenu) {
                     if (PointInRect(mouseX, mouseY, openButton.rect)) {
-                        if (const auto selection = ShowOpenMediaFileDialog(); selection.has_value()) {
+                        if (const auto selection = platform::ShowOpenMediaFileDialog(); selection.has_value()) {
                             openSelection(*selection);
                         }
                     } else if (PointInRect(mouseX, mouseY, playButton.rect)) {
@@ -353,7 +307,8 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         FillRect(renderer, contentRect, SDL_Color{6, 10, 14, 255});
-        if (!player.RenderVideo(renderer, contentRect)) {
+        const player::Rect contentArea{contentRect.x, contentRect.y, contentRect.w, contentRect.h};
+        if (!player.RenderVideo(contentArea)) {
             DrawText(renderer, font, player.HasMedia() ? "Audio-only media" : "No video frame", contentRect.x + 28,
                      contentRect.y + 28, SDL_Color{214, 220, 226, 255});
             DrawText(renderer, font, "Open a file to start learning the playback pipeline.", contentRect.x + 28,
@@ -378,7 +333,6 @@ int main(int argc, char* argv[]) {
         DrawButton(renderer, font, playButton, SDL_Color{52, 93, 176, 255}, SDL_Color{245, 248, 252, 255});
         DrawButton(renderer, font, speedButton, SDL_Color{40, 47, 58, 255}, SDL_Color{240, 243, 247, 255});
 
-        // Draw speed menu if open
         if (showSpeedMenu) {
             for (size_t i = 0; i < speedOptions.size(); ++i) {
                 const SDL_Rect itemRect = {speedButton.rect.x,
@@ -417,10 +371,6 @@ int main(int argc, char* argv[]) {
     }
 
     player.Close();
-
-    if (wideArguments != nullptr) {
-        LocalFree(wideArguments);
-    }
 
     if (font != nullptr) {
         TTF_CloseFont(font);

@@ -1,7 +1,5 @@
 #include "player/Player.h"
 
-#include <SDL.h>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -94,11 +92,8 @@ struct Player::Impl {
     int audioStreamIndex = -1;
     int videoStreamIndex = -1;
 
-    SDL_AudioDeviceID audioDevice = 0;
-    SDL_Texture* videoTexture = nullptr;
-    SDL_Renderer* textureRenderer = nullptr;
-    int textureWidth = 0;
-    int textureHeight = 0;
+    std::unique_ptr<IAudioOutput> audioOutput;
+    std::unique_ptr<IVideoOutput> videoOutput;
 
     std::deque<AudioChunk> audioQueue;
     std::deque<VideoFrame> videoQueue;
@@ -217,8 +212,8 @@ struct Player::Impl {
 
         workerThread = std::thread([this]() { DecodeLoop(); });
 
-        if (audioDevice != 0) {
-            SDL_PauseAudioDevice(audioDevice, 0);
+        if (audioOutput != nullptr) {
+            audioOutput->Start();
         }
 
         return true;
@@ -233,8 +228,8 @@ struct Player::Impl {
             workerThread.join();
         }
 
-        if (audioDevice != 0) {
-            SDL_PauseAudioDevice(audioDevice, 1);
+        if (audioOutput != nullptr) {
+            audioOutput->Stop();
         }
 
         {
@@ -248,17 +243,12 @@ struct Player::Impl {
             hasDisplayedFrame = false;
         }
 
-        if (audioDevice != 0) {
-            SDL_CloseAudioDevice(audioDevice);
-            audioDevice = 0;
+        if (audioOutput != nullptr) {
+            audioOutput->Close();
         }
 
-        if (videoTexture != nullptr) {
-            SDL_DestroyTexture(videoTexture);
-            videoTexture = nullptr;
-            textureRenderer = nullptr;
-            textureWidth = 0;
-            textureHeight = 0;
+        if (videoOutput != nullptr) {
+            videoOutput->Reset();
         }
 
         if (swrContext != nullptr) {
@@ -340,41 +330,17 @@ struct Player::Impl {
         }
     }
 
-    bool RenderVideo(SDL_Renderer* renderer, const SDL_Rect& targetRect) {
+    bool RenderVideo(const Rect& targetRect) {
         std::lock_guard<std::mutex> lock(videoMutex);
 
-        if (!hasDisplayedFrame || renderer == nullptr) {
-            return false;
-        }
-
-        if (videoTexture == nullptr || textureRenderer != renderer || textureWidth != displayedFrame.width ||
-            textureHeight != displayedFrame.height) {
-            if (videoTexture != nullptr) {
-                SDL_DestroyTexture(videoTexture);
-            }
-
-            videoTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_BGRA32, SDL_TEXTUREACCESS_STREAMING,
-                                             displayedFrame.width, displayedFrame.height);
-
-            if (videoTexture == nullptr) {
-                SetStatusText("Failed to create SDL texture.");
-                return false;
-            }
-
-            textureRenderer = renderer;
-            textureWidth = displayedFrame.width;
-            textureHeight = displayedFrame.height;
-        }
-
-        if (SDL_UpdateTexture(videoTexture, nullptr, displayedFrame.pixels.data(), displayedFrame.pitch) != 0) {
-            SetStatusText("Failed to upload video frame to texture.");
+        if (!hasDisplayedFrame || videoOutput == nullptr) {
             return false;
         }
 
         const float srcAspect = static_cast<float>(displayedFrame.width) / static_cast<float>(displayedFrame.height);
         const float dstAspect = static_cast<float>(targetRect.w) / static_cast<float>(targetRect.h);
 
-        SDL_Rect destination = targetRect;
+        Rect destination = targetRect;
         if (srcAspect > dstAspect) {
             destination.h = static_cast<int>(static_cast<float>(targetRect.w) / srcAspect);
             destination.y = targetRect.y + (targetRect.h - destination.h) / 2;
@@ -383,7 +349,13 @@ struct Player::Impl {
             destination.x = targetRect.x + (targetRect.w - destination.w) / 2;
         }
 
-        SDL_RenderCopy(renderer, videoTexture, nullptr, &destination);
+        const VideoFrameView frame{displayedFrame.pixels.data(), displayedFrame.width, displayedFrame.height,
+                                   displayedFrame.pitch};
+        if (!videoOutput->Present(frame, destination)) {
+            SetStatusText("Failed to present video frame.");
+            return false;
+        }
+
         return true;
     }
 
@@ -495,22 +467,14 @@ struct Player::Impl {
     }
 
     bool OpenAudioDevice(std::string& errorMessage) {
-        SDL_AudioSpec desired = {};
-        desired.freq = kAudioDeviceSampleRate;
-        desired.channels = static_cast<Uint8>(kAudioDeviceChannels);
-        desired.format = AUDIO_S16SYS;
-        desired.samples = 2048;
-        desired.callback = &Impl::AudioCallback;
-        desired.userdata = this;
-
-        SDL_AudioSpec obtained = {};
-        audioDevice = SDL_OpenAudioDevice(nullptr, 0, &desired, &obtained, 0);
-        if (audioDevice == 0) {
-            errorMessage = "Failed to open SDL audio device: " + std::string(SDL_GetError());
+        if (audioOutput == nullptr) {
+            errorMessage = "No audio output has been configured.";
             return false;
         }
 
-        return true;
+        const AudioOutputFormat format{kAudioDeviceSampleRate, kAudioDeviceChannels, kAudioBytesPerSample};
+        return audioOutput->Open(
+            format, [this](std::uint8_t* stream, int length) { FillAudioBuffer(stream, length); }, errorMessage);
     }
 
     void PopulateMediaInfo() {
@@ -549,7 +513,7 @@ struct Player::Impl {
             }
 
             if (ShouldThrottle()) {
-                SDL_Delay(8);
+                std::this_thread::sleep_for(std::chrono::milliseconds(8));
                 continue;
             }
 
@@ -567,13 +531,13 @@ struct Player::Impl {
                     SetStatusText("Playback finished");
                 }
 
-                SDL_Delay(15);
+                std::this_thread::sleep_for(std::chrono::milliseconds(15));
                 continue;
             }
 
             if (readResult < 0) {
                 SetStatusText("Read packet failed: " + AvErrorToString(readResult));
-                SDL_Delay(20);
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
                 continue;
             }
 
@@ -852,13 +816,8 @@ struct Player::Impl {
         videoQueue.push_back(std::move(videoFrame));
     }
 
-    static void AudioCallback(void* userdata, Uint8* stream, int length) {
-        auto* self = static_cast<Impl*>(userdata);
-        self->FillAudioBuffer(stream, length);
-    }
-
-    void FillAudioBuffer(Uint8* stream, const int length) {
-        SDL_memset(stream, 0, length);
+    void FillAudioBuffer(std::uint8_t* stream, const int length) {
+        std::memset(stream, 0, length);
 
         if (paused.load() || audioStream == nullptr) {
             return;
@@ -929,13 +888,15 @@ Player::~Player() = default;
 
 bool Player::Open(const std::string& path, std::string& errorMessage) { return impl_->Open(path, errorMessage); }
 
+void Player::SetAudioOutput(std::unique_ptr<IAudioOutput> output) { impl_->audioOutput = std::move(output); }
+
+void Player::SetVideoOutput(std::unique_ptr<IVideoOutput> output) { impl_->videoOutput = std::move(output); }
+
 void Player::Close() { impl_->Close(); }
 
 void Player::Update() { impl_->Update(); }
 
-bool Player::RenderVideo(SDL_Renderer* renderer, const SDL_Rect& targetRect) {
-    return impl_->RenderVideo(renderer, targetRect);
-}
+bool Player::RenderVideo(const Rect& targetRect) { return impl_->RenderVideo(targetRect); }
 
 void Player::TogglePause() { impl_->TogglePause(); }
 

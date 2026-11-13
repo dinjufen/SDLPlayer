@@ -1,11 +1,11 @@
 #pragma once
 
+#include "player/IAudioOutput.h"
+#include "player/IVideoOutput.h"
+
 #include <memory>
 #include <string>
 #include <vector>
-
-struct SDL_Renderer;
-struct SDL_Rect;
 
 namespace player {
 
@@ -32,11 +32,14 @@ public:
     Player(const Player&) = delete;
     Player& operator=(const Player&) = delete;
 
+    void SetAudioOutput(std::unique_ptr<IAudioOutput> output);
+    void SetVideoOutput(std::unique_ptr<IVideoOutput> output);
+
     bool Open(const std::string& path, std::string& errorMessage);
     void Close();
 
     void Update();
-    bool RenderVideo(SDL_Renderer* renderer, const SDL_Rect& targetRect);
+    bool RenderVideo(const Rect& targetRect);
 
     void TogglePause();
     void SetPaused(bool paused);

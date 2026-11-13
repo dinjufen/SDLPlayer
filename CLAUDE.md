@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SDLPlayer is a learning-oriented C++ media player for Windows, built with SDL2 + FFmpeg. It supports local video/audio file playback with a self-drawn SDL UI. The project targets Windows + MSVC exclusively and uses C++20.
+SDLPlayer is a learning-oriented C++ media player for Windows and macOS, built with SDL2 + FFmpeg. It supports local video/audio file playback with a self-drawn SDL UI. The project uses C++20. See AGENTS.md and README.md for the current architecture and build commands.
 
 ## Build Commands
 
@@ -34,7 +34,7 @@ To avoid the `VCPKG_ROOT` environment variable, copy `CMakeUserPresets.json.exam
 
 For Chinese-localized MSVC, presets set `VSLANG=1033` to force English. If FFmpeg fails to compile due to Chinese characters in `config.h`'s `CC_IDENT`, patch the vcpkg port to disable the offending filter.
 
-There are no tests or linting tools configured.
+Automated tests are configured through CTest (`ctest --preset test-msvc2026-debug` or `test-macos-arm64-debug`).
 
 ## Architecture
 

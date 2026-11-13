@@ -49,6 +49,86 @@
       "displayName": "MSVC 2022 Release",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build/msvc2022-release"
+    },
+    {
+      "name": "macos-arm64-debug",
+      "inherits": "vcpkg-base",
+      "displayName": "macOS arm64 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-arm64-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-arm64-release",
+      "inherits": "vcpkg-base",
+      "displayName": "macOS arm64 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-arm64-release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-x64-debug",
+      "inherits": "vcpkg-base",
+      "displayName": "macOS x64 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-x64-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "linux-ninja-debug",
+      "inherits": "vcpkg-base",
+      "displayName": "Linux Ninja (vcpkg) Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-ninja-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-system-debug",
+      "displayName": "Linux Ninja (system packages) Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/linux-system-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
     }
   ],
   "buildPresets": [
@@ -71,6 +151,26 @@
       "name": "build-msvc2022-release",
       "configurePreset": "msvc2022-release",
       "configuration": "Release"
+    },
+    {
+      "name": "build-macos-arm64-debug",
+      "configurePreset": "macos-arm64-debug"
+    },
+    {
+      "name": "build-macos-arm64-release",
+      "configurePreset": "macos-arm64-release"
+    },
+    {
+      "name": "build-macos-x64-debug",
+      "configurePreset": "macos-x64-debug"
+    },
+    {
+      "name": "build-linux-ninja-debug",
+      "configurePreset": "linux-ninja-debug"
+    },
+    {
+      "name": "build-linux-system-debug",
+      "configurePreset": "linux-system-debug"
     }
   ],
   "testPresets": [
@@ -102,6 +202,41 @@
       "name": "test-msvc2022-release",
       "configurePreset": "msvc2022-release",
       "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-arm64-debug",
+      "configurePreset": "macos-arm64-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-arm64-release",
+      "configurePreset": "macos-arm64-release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-x64-debug",
+      "configurePreset": "macos-x64-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-linux-ninja-debug",
+      "configurePreset": "linux-ninja-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-linux-system-debug",
+      "configurePreset": "linux-system-debug",
       "output": {
         "outputOnFailure": true
       }
