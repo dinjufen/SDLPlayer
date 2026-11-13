@@ -38,7 +38,7 @@ cmake --preset macos-qt-debug -DCMAKE_PREFIX_PATH="/path/to/Qt/6.9.0/macos;/opt/
 
 也可以复制 `CMakeUserPresets.json.example` 为 `CMakeUserPresets.json`（不要提交），使用 `macos-qt-debug-local` 并改其中的 Qt 路径。
 
-FFmpeg 通过仓库里的 `cmake/FindFFMPEG.cmake` 查找 Homebrew 的 `/opt/homebrew` 前缀，不需要 vcpkg。若把二进制单独拷走后找不到 dylib，把 Homebrew 的 FFmpeg 库放到可执行文件旁边，或设置 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`。
+FFmpeg 通过仓库里的 `cmake/FindFFMPEG.cmake` 查找 Homebrew 的 `/opt/homebrew` 前缀，不需要 vcpkg。查找时会跳过 Qt 安装目录里自带的 FFmpeg（那是给 Qt Multimedia 用的，主版本可能与 Homebrew 头文件不一致，混用会导致音频重采样失败）。若把二进制单独拷走后找不到 dylib，把 Homebrew 的 FFmpeg 库放到可执行文件旁边，或设置 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`。
 
 遗留 SDL 壳（同一构建目录，如果找到了 SDL2）：
 
