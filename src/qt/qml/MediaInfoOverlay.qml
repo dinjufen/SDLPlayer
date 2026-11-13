@@ -25,7 +25,7 @@ Item {
             anchors.rightMargin: 14
             text: player.mediaSummary
             color: Theme.textSecondary
-            font.families: Theme.uiFontFamilies
+            font.family: Theme.uiFontFamily
             font.pixelSize: 12
             elide: Text.ElideRight
         }

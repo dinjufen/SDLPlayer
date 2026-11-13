@@ -120,7 +120,7 @@ ApplicationWindow {
         text: player.statusText
         color: player.statusText.indexOf("Failed") >= 0 || player.statusText.indexOf("失败") >= 0
                ? Theme.error : Theme.textTertiary
-        font.families: Theme.uiFontFamilies
+        font.family: Theme.uiFontFamily
         font.pixelSize: 12
         opacity: root.controlsVisible && player.statusText.length > 0 ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 160 } }

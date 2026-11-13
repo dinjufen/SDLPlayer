@@ -12,7 +12,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "打开一个媒体文件开始播放"
             color: Theme.textPrimary
-            font.families: Theme.uiFontFamilies
+            font.family: Theme.uiFontFamily
             font.pixelSize: 22
             font.weight: Font.Medium
         }
@@ -21,7 +21,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "将文件拖放到窗口，或按 O 打开"
             color: Theme.textTertiary
-            font.families: Theme.uiFontFamilies
+            font.family: Theme.uiFontFamily
             font.pixelSize: 13
         }
 
@@ -38,7 +38,7 @@ Item {
                 anchors.centerIn: parent
                 text: "打开文件"
                 color: Theme.accent
-                font.families: Theme.uiFontFamilies
+                font.family: Theme.uiFontFamily
                 font.pixelSize: 13
             }
 

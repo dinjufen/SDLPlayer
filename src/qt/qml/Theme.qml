@@ -26,4 +26,17 @@ QtObject {
     readonly property var monoFontFamilies: [
         "SF Mono", "Menlo", "Cascadia Mono", "Consolas", "Sarasa Mono SC", "monospace"
     ]
+
+    // Qt Quick 的 font 值类型只有 family，没有 families（那是 QFont 的 C++ API）。
+    readonly property string uiFontFamily: firstAvailable(uiFontFamilies)
+    readonly property string monoFontFamily: firstAvailable(monoFontFamilies)
+
+    function firstAvailable(candidates) {
+        const available = Qt.fontFamilies()
+        for (let i = 0; i < candidates.length; ++i) {
+            if (available.indexOf(candidates[i]) !== -1)
+                return candidates[i]
+        }
+        return candidates.length > 0 ? candidates[candidates.length - 1] : ""
+    }
 }

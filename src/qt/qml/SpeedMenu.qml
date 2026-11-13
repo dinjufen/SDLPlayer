@@ -28,7 +28,7 @@ Item {
             anchors.centerIn: parent
             text: root.formatSpeed(root.current)
             color: Theme.textPrimary
-            font.families: Theme.monoFontFamilies
+            font.family: Theme.monoFontFamily
             font.pixelSize: 12
         }
 
@@ -75,7 +75,7 @@ Item {
                         anchors.centerIn: parent
                         text: root.formatSpeed(modelData)
                         color: Math.abs(modelData - root.current) < 0.01 ? Theme.accent : Theme.textPrimary
-                        font.families: Theme.monoFontFamilies
+                        font.family: Theme.monoFontFamily
                         font.pixelSize: 12
                     }
 

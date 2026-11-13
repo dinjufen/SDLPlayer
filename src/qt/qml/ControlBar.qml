@@ -56,7 +56,7 @@ Item {
                 width: 98
                 text: root.formatTime(seekBar.visualPosition) + " / " + root.formatTime(player.duration)
                 color: Theme.textSecondary
-                font.families: Theme.monoFontFamilies
+                font.family: Theme.monoFontFamily
                 font.pixelSize: 12
                 horizontalAlignment: Text.AlignLeft
             }

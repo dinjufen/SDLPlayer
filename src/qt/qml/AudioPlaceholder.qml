@@ -10,7 +10,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "仅音频"
             color: Theme.textTertiary
-            font.families: Theme.uiFontFamilies
+            font.family: Theme.uiFontFamily
             font.pixelSize: 13
             font.letterSpacing: 2
         }
@@ -20,7 +20,7 @@ Item {
             width: parent.width
             text: player.mediaTitle
             color: Theme.textPrimary
-            font.families: Theme.uiFontFamilies
+            font.family: Theme.uiFontFamily
             font.pixelSize: 26
             font.weight: Font.Medium
             elide: Text.ElideMiddle
