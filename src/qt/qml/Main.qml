@@ -65,6 +65,7 @@ ApplicationWindow {
     EmptyState {
         anchors.fill: parent
         visible: !player.hasMedia
+        z: 5
         onOpenRequested: root.requestOpen()
     }
 
@@ -86,11 +87,15 @@ ApplicationWindow {
         onPointChanged: root.revealControls()
     }
 
+    // Only intercept clicks while media is loaded. Otherwise this surface
+    // sits on top of EmptyState and steals the "打开文件" button.
     Item {
         id: playbackSurface
         anchors.fill: parent
         anchors.bottomMargin: controlBar.height + controlBar.anchors.bottomMargin
         z: 1
+        visible: player.hasMedia
+        enabled: player.hasMedia
 
         TapHandler {
             acceptedButtons: Qt.LeftButton
@@ -98,10 +103,7 @@ ApplicationWindow {
                 root.revealControls()
                 controlBar.closeMenus()
             }
-            onDoubleTapped: {
-                if (player.hasMedia)
-                    player.togglePause()
-            }
+            onDoubleTapped: player.togglePause()
         }
     }
 
