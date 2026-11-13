@@ -78,22 +78,30 @@ ApplicationWindow {
         z: 40
     }
 
-    MouseArea {
-        id: activityMouse
+    // HoverHandler does not steal clicks from the control bar, unlike a
+    // full-window MouseArea. Keep the click/double-click surface above the
+    // video only, so the seek bar can receive presses.
+    HoverHandler {
+        id: activityHover
+        onPointChanged: root.revealControls()
+    }
+
+    Item {
+        id: playbackSurface
         anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.LeftButton
-        propagateComposedEvents: true
+        anchors.bottomMargin: controlBar.height + controlBar.anchors.bottomMargin
         z: 1
-        onPressed: function(mouse) {
-            root.revealControls()
-            controlBar.closeMenus()
-            mouse.accepted = false
-        }
-        onPositionChanged: root.revealControls()
-        onDoubleClicked: {
-            if (player.hasMedia)
-                player.togglePause()
+
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: {
+                root.revealControls()
+                controlBar.closeMenus()
+            }
+            onDoubleTapped: {
+                if (player.hasMedia)
+                    player.togglePause()
+            }
         }
     }
 

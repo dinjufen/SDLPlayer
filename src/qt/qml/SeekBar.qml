@@ -8,12 +8,26 @@ Item {
     property bool dragging: false
     signal seekRequested(real seconds)
 
-    implicitHeight: 20
+    implicitHeight: 28
     enabled: duration > 0
 
     property real dragPosition: 0
     property real visualPosition: dragging ? dragPosition : position
     property real ratio: duration > 0 ? Math.min(1, Math.max(0, visualPosition / duration)) : 0
+
+    function secondsAt(px) {
+        return Math.min(1, Math.max(0, px / Math.max(1, width))) * duration
+    }
+
+    function previewAt(px) {
+        dragPosition = secondsAt(px)
+    }
+
+    function requestSeekAt(px) {
+        previewAt(px)
+        if (duration > 0)
+            seekRequested(dragPosition)
+    }
 
     Rectangle {
         id: track
@@ -41,7 +55,7 @@ Item {
         border.color: Theme.accent
         border.width: mouse.containsMouse || root.dragging ? 2 : 0
         anchors.verticalCenter: parent.verticalCenter
-        x: Math.round((track.width - width) * root.ratio)
+        x: Math.round((root.width - width) * root.ratio)
         scale: root.dragging || mouse.containsMouse ? 1.15 : 1
         Behavior on scale { NumberAnimation { duration: 80 } }
     }
@@ -50,27 +64,25 @@ Item {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
+        preventStealing: true
         cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
         enabled: root.enabled
-
-        function secondsAt(px) {
-            return root.ratioAt(px) * root.duration
-        }
-        function ratioAt(px) {
-            return Math.min(1, Math.max(0, px / Math.max(1, track.width)))
-        }
+        acceptedButtons: Qt.LeftButton
 
         onPressed: function(event) {
-            root.dragPosition = secondsAt(event.x)
             root.dragging = true
+            root.requestSeekAt(event.x)
         }
         onPositionChanged: function(event) {
             if (pressed)
-                root.dragPosition = secondsAt(event.x)
+                root.previewAt(event.x)
         }
-        onReleased: {
+        onReleased: function(event) {
+            root.requestSeekAt(event.x)
             root.dragging = false
-            root.seekRequested(root.dragPosition)
+        }
+        onCanceled: {
+            root.dragging = false
         }
     }
 }

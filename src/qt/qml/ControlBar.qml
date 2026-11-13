@@ -3,7 +3,7 @@ import QtQuick
 Item {
     id: root
 
-    property bool hovered: barMouse.containsMouse
+    property bool hovered: barHover.hovered
     signal openRequested()
 
     implicitHeight: Theme.controlBarHeight + 16
@@ -26,11 +26,8 @@ Item {
         border.color: Theme.glassBorder
         border.width: 1
 
-        MouseArea {
-            id: barMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
+        HoverHandler {
+            id: barHover
         }
 
         Row {
