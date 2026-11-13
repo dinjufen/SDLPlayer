@@ -172,6 +172,7 @@ if(SDLPLAYER_BUILD_QT)
     qt_add_qml_module(SDLPlayer
         URI SDLPlayer
         VERSION 1.0
+        OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/qml/SDLPlayer
         QML_FILES
             src/qt/qml/Main.qml
             src/qt/qml/Theme.qml
@@ -186,6 +187,11 @@ if(SDLPLAYER_BUILD_QT)
         SOURCES
             src/qt/VideoItem.cpp
             src/qt/VideoItem.h
+    )
+
+    # Generated qmltyperegistrations.cpp includes <VideoItem.h> and <QQuickItem>.
+    target_include_directories(SDLPlayer PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/qt
     )
 
     if(MSVC)
@@ -208,6 +214,20 @@ if(SDLPLAYER_BUILD_QT)
     )
 
     if(APPLE)
+        # AGL still exists at runtime, but recent macOS SDKs dropped the
+        # framework stubs. Qt 6.9 continues to link it.
+        foreach(_agl_sdk IN ITEMS
+            /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk
+            /Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk
+            /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk
+            /Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk)
+            if(EXISTS "${_agl_sdk}/System/Library/Frameworks/AGL.framework")
+                target_link_options(SDLPlayer PRIVATE
+                    "LINKER:-F${_agl_sdk}/System/Library/Frameworks")
+                break()
+            endif()
+        endforeach()
+
         set_property(TARGET SDLPlayer APPEND PROPERTY BUILD_RPATH
             "${FFMPEG_LIBRARY_DIRS}"
             /opt/homebrew/lib

@@ -5,7 +5,7 @@
 
 class PlayerController;
 
-class VideoItem final : public QQuickItem {
+class VideoItem : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
     Q_PROPERTY(PlayerController* controller READ controller WRITE setController NOTIFY controllerChanged)
