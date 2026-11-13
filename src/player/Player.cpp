@@ -57,6 +57,39 @@ int64_t SecondsToGlobalTimestamp(const double seconds) {
     return static_cast<int64_t>(seconds * static_cast<double>(AV_TIME_BASE));
 }
 
+double StreamDurationSeconds(const AVStream* stream) {
+    if (stream == nullptr || stream->time_base.den == 0) {
+        return 0.0;
+    }
+
+    if (stream->duration > 0 && stream->duration != AV_NOPTS_VALUE) {
+        return static_cast<double>(stream->duration) * av_q2d(stream->time_base);
+    }
+
+    if (stream->nb_frames > 0) {
+        const AVRational frameRate =
+            stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0
+                ? stream->avg_frame_rate
+                : stream->r_frame_rate;
+        if (frameRate.num > 0 && frameRate.den > 0) {
+            return static_cast<double>(stream->nb_frames) * av_q2d(av_inv_q(frameRate));
+        }
+    }
+
+    return 0.0;
+}
+
+double MediaDurationSeconds(const AVFormatContext* formatContext, const AVStream* audioStream,
+                            const AVStream* videoStream) {
+    double duration = 0.0;
+    if (formatContext != nullptr && formatContext->duration > 0 && formatContext->duration != AV_NOPTS_VALUE) {
+        duration = static_cast<double>(formatContext->duration) / static_cast<double>(AV_TIME_BASE);
+    }
+    duration = std::max(duration, StreamDurationSeconds(videoStream));
+    duration = std::max(duration, StreamDurationSeconds(audioStream));
+    return duration;
+}
+
 std::string SafeCString(const char* value) {
     return value != nullptr ? std::string(value) : std::string();
 }
@@ -481,9 +514,7 @@ struct Player::Impl {
         mediaInfo.hasAudio = audioStream != nullptr;
         mediaInfo.hasVideo = videoStream != nullptr;
         mediaInfo.formatName = formatContext != nullptr ? SafeCString(formatContext->iformat->long_name) : "";
-        mediaInfo.durationSeconds = formatContext != nullptr && formatContext->duration > 0
-                                        ? static_cast<double>(formatContext->duration) / static_cast<double>(AV_TIME_BASE)
-                                        : 0.0;
+        mediaInfo.durationSeconds = MediaDurationSeconds(formatContext, audioStream, videoStream);
 
         if (videoStream != nullptr) {
             mediaInfo.width = videoCodecContext->width;

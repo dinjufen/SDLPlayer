@@ -1,6 +1,6 @@
 # SDL + FFmpeg 学习型播放器
 
-这是一个从零搭建的 C++ 音视频播放器示例工程，面向 Windows 与 macOS，使用 `SDL2 + FFmpeg` 完成视频渲染、音频输出、媒体解析、进度控制和基础信息展示。播放器核心与平台壳已经拆开，后续 Phase 2 计划用 Qt 6 Quick/QML 替换当前 SDL 壳，但不改 FFmpeg 解码/同步引擎。
+这是一个 C++ 桌面播放器，面向 Windows 与 macOS。解码、解复用和同步使用共享的 FFmpeg 核心（`player::Player`）；产品界面是 Qt 6.9 Quick / QML。原先的 SDL 自绘界面作为遗留目标 `SDLPlayerSdl` 保留，主程序名为 `SDLPlayer`。
 
 ## 当前能力
 
@@ -10,9 +10,10 @@
 - 播放 / 暂停
 - 显示当前进度 / 总时长
 - 鼠标拖动进度条 seek
-- 倍速切换（0.5x / 1.0x / 1.25x / 1.5x / 2.0x）
+- 倍速切换（0.5x–2.0x）
 - 显示基础媒体信息
-- SDL 自绘简洁 UI，操作习惯参考常见桌面播放器（Windows / macOS 功能对等）
+- 深色 Qt Quick 播放界面（控制条自动显隐、拖放打开、输出音量）
+- 遗留 SDL 壳仍可构建，功能与第一阶段对等
 
 ## 说明
 
@@ -22,19 +23,33 @@
 
 ## 推荐环境
 
-- Windows：Visual Studio 2022 或 2026
-- macOS：Apple Clang + Ninja，优先 Apple Silicon（`arm64-osx`）
+- macOS：Apple Clang + Ninja，Apple Silicon，官方 Qt 6.9.x，Homebrew FFmpeg
+- Windows：Visual Studio 2022 或 2026，Qt 6.9.x；遗留 SDL 壳仍可用 vcpkg
 - CMake 3.25+
-- vcpkg（两端同一套 `find_package` 依赖）
 
 推荐版本方向：
 
-- SDL2 2.30+
+- Qt 6.9+（Quick、Quick Controls 2、Quick Dialogs 2、Multimedia）
 - FFmpeg 7.x
+- SDL2 2.30+（仅遗留壳需要）
 
-这里选择 SDL2 而不是 SDL3，是为了让首版播放器先基于更成熟、资料更多的 API 跑通核心链路，同时保持依赖版本尽量新且稳定。当前 UI 仍是学习型 SDL 自绘；更精美的跨平台界面会在 Phase 2 用 Qt 6 QML 重做。
+详细的 Qt 构建说明见 `docs/qt-shell.md`。
 
-## 构建步骤
+## 在 Mac 上构建 Qt 壳（主程序）
+
+默认使用本机 Qt 6.9.0 路径 `/Users/ding/Qt/6.9.0/macos` 与 Homebrew FFmpeg，不需要 vcpkg：
+
+```bash
+cmake --preset macos-qt-debug
+cmake --build --preset build-macos-qt-debug
+ctest --preset test-macos-qt-debug
+./build/macos-qt-debug/SDLPlayer [path-to-media-file]
+```
+
+可用 `-DCMAKE_PREFIX_PATH="/path/to/Qt/6.9.0/macos;/opt/homebrew"` 覆盖 Qt 路径。遗留 SDL 程序是同一目录下的 `SDLPlayerSdl`。
+
+## 构建步骤（Windows / 遗留 SDL / vcpkg）
+
 
 1. 安装并初始化 vcpkg。
 2. 设置环境变量，将 `VCPKG_ROOT` 指向你本地的 vcpkg 安装目录：
@@ -81,11 +96,11 @@
 5. 运行生成的程序：
 
    ```powershell
-   # Visual Studio 2026
+   # 主程序（若本机已安装 Qt 6.9+）
    .\build\msvc2026-debug\Debug\SDLPlayer.exe
 
-   # Visual Studio 2022
-   # .\build\msvc2022-debug\Debug\SDLPlayer.exe
+   # 遗留 SDL 壳
+   .\build\msvc2026-debug\Debug\SDLPlayerSdl.exe
    ```
 
 6. macOS（Apple Silicon，推荐）同样使用 vcpkg：
@@ -95,8 +110,10 @@
    cmake --preset macos-arm64-debug
    cmake --build --preset build-macos-arm64-debug
    ctest --preset test-macos-arm64-debug
-   ./build/macos-arm64-debug/SDLPlayer [path-to-media-file]
+   ./build/macos-arm64-debug/SDLPlayerSdl [path-to-media-file]
    ```
+
+   若要构建 Qt 主程序，请改用上面的 `macos-qt-debug` preset。
 
    Intel Mac 可改用 `macos-x64-debug` / `build-macos-x64-debug` / `test-macos-x64-debug`。
 
@@ -124,6 +141,7 @@
 
 ## 文档
 
+- Qt 壳构建与架构：`docs/qt-shell.md`
 - 设计文档：`docs/design.md`
 - 格式支持矩阵：`docs/support-matrix.md`
 
@@ -151,4 +169,4 @@
 - 补充带样片的媒体打开、seek、EOF 与纯音频回归测试
 - 增强音视频同步策略
 - 增加播放列表、音量控制、帧步进等功能
-- 在播放器核心保持稳定后，进入 Phase 2：用 Qt 6 Quick/QML 替换 SDL 壳
+- 为 Qt 壳补充播放列表、字幕、硬解与 HLS

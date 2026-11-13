@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-SDLPlayer is a learning-oriented C++ media player for Windows and macOS, built with SDL2 + FFmpeg. It supports local video/audio file playback with a self-drawn SDL UI. The FFmpeg player core is shared; platform dialogs/fonts and SDL audio/video output live behind thin interfaces so a later Qt 6 QML shell can replace the current UI. The project uses C++20.
+SDLPlayer is a C++ media player for Windows and macOS. The FFmpeg player core is shared. The product UI is a Qt 6.9 Quick/QML shell (`SDLPlayer`). The original self-drawn SDL UI remains as the legacy `SDLPlayerSdl` target. The project uses C++20.
 
 ## Build Commands
 
@@ -34,12 +34,17 @@ ctest --preset test-msvc2026-debug
 ```
 
 ```bash
-# macOS Apple Silicon
+# macOS Qt shell (primary) — official Qt 6.9 + Homebrew FFmpeg, no vcpkg
+cmake --preset macos-qt-debug
+cmake --build --preset build-macos-qt-debug
+ctest --preset test-macos-qt-debug
+./build/macos-qt-debug/SDLPlayer [path-to-media-file]
+
+# macOS legacy SDL shell via vcpkg
 export VCPKG_ROOT="<your-vcpkg-path>"
 cmake --preset macos-arm64-debug
 cmake --build --preset build-macos-arm64-debug
-ctest --preset test-macos-arm64-debug
-./build/macos-arm64-debug/SDLPlayer [path-to-media-file]
+./build/macos-arm64-debug/SDLPlayerSdl [path-to-media-file]
 ```
 
 To avoid the `VCPKG_ROOT` environment variable, copy `CMakeUserPresets.json.example` to `CMakeUserPresets.json` and set the vcpkg path, then use the `-local` preset variants (e.g. `msvc2026-debug-local` or `macos-arm64-debug-local`).

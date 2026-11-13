@@ -83,6 +83,28 @@
         "VCPKG_TARGET_TRIPLET": "x64-osx",
         "CMAKE_OSX_ARCHITECTURES": "x86_64"
       }
+    },
+    {
+      "name": "macos-qt-debug-local",
+      "displayName": "macOS Qt 6.9 arm64 Debug (local Qt path)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-qt-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_PREFIX_PATH": "<path-to-qt>/macos;/opt/homebrew",
+        "SDLPLAYER_BUILD_QT": "ON",
+        "SDLPLAYER_REQUIRE_QT": "ON",
+        "SDLPLAYER_BUILD_SDL": "ON"
+      },
+      "environment": {
+        "PKG_CONFIG_PATH": "/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig"
+      }
     }
   ],
   "buildPresets": [
@@ -117,6 +139,10 @@
     {
       "name": "build-macos-x64-debug-local",
       "configurePreset": "macos-x64-debug-local"
+    },
+    {
+      "name": "build-macos-qt-debug-local",
+      "configurePreset": "macos-qt-debug-local"
     }
   ],
   "testPresets": [
@@ -169,6 +195,13 @@
     {
       "name": "test-macos-x64-debug-local",
       "configurePreset": "macos-x64-debug-local",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-qt-debug-local",
+      "configurePreset": "macos-qt-debug-local",
       "output": {
         "outputOnFailure": true
       }

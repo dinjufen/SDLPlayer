@@ -129,6 +129,50 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
+    },
+    {
+      "name": "macos-qt-debug",
+      "displayName": "macOS Qt 6.9 arm64 Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-qt-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_PREFIX_PATH": "/Users/ding/Qt/6.9.0/macos;/opt/homebrew",
+        "SDLPLAYER_BUILD_QT": "ON",
+        "SDLPLAYER_REQUIRE_QT": "ON",
+        "SDLPLAYER_BUILD_SDL": "ON"
+      },
+      "environment": {
+        "PKG_CONFIG_PATH": "/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig"
+      }
+    },
+    {
+      "name": "macos-qt-release",
+      "displayName": "macOS Qt 6.9 arm64 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-qt-release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_PREFIX_PATH": "/Users/ding/Qt/6.9.0/macos;/opt/homebrew",
+        "SDLPLAYER_BUILD_QT": "ON",
+        "SDLPLAYER_REQUIRE_QT": "ON",
+        "SDLPLAYER_BUILD_SDL": "ON"
+      },
+      "environment": {
+        "PKG_CONFIG_PATH": "/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig"
+      }
     }
   ],
   "buildPresets": [
@@ -171,6 +215,14 @@
     {
       "name": "build-linux-system-debug",
       "configurePreset": "linux-system-debug"
+    },
+    {
+      "name": "build-macos-qt-debug",
+      "configurePreset": "macos-qt-debug"
+    },
+    {
+      "name": "build-macos-qt-release",
+      "configurePreset": "macos-qt-release"
     }
   ],
   "testPresets": [
@@ -237,6 +289,20 @@
     {
       "name": "test-linux-system-debug",
       "configurePreset": "linux-system-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-qt-debug",
+      "configurePreset": "macos-qt-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-qt-release",
+      "configurePreset": "macos-qt-release",
       "output": {
         "outputOnFailure": true
       }
