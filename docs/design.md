@@ -26,7 +26,7 @@
 
 ## 3. 总体架构
 
-播放器主要分为三层：
+播放器主要分为三层，并已经把平台相关壳和音视频输出从核心中抽出去：
 
 ### 3.1 UI 层
 
@@ -36,6 +36,9 @@
 - 事件循环
 - 进度条与按钮交互
 - 基础文字信息显示
+- HiDPI/Retina 坐标映射（窗口坐标与 renderer 输出尺寸对齐）
+
+平台差异集中在 `src/platform/`：打开文件对话框、UI 字体、命令行媒体路径。不要把 `#ifdef` 散落到事件循环里。
 
 ### 3.2 Player 控制层
 
@@ -46,7 +49,9 @@
 - seek 请求
 - 倍速切换
 - 当前进度与媒体信息查询
-- 视频帧渲染输出
+- 通过 `IAudioOutput` / `IVideoOutput` 提交 PCM 与视频帧
+
+当前提供 SDL 实现（`src/output/`）。核心不再直接调用 `SDL_Renderer` 或 SDL 音频 API，以便 Phase 2 用 Qt 6 QML 替换壳层时不必重写 demux/decode/sync/seek。
 
 ### 3.3 媒体处理层
 
@@ -56,7 +61,7 @@
 - `libavcodec`：音频 / 视频解码
 - `libswresample`：音频重采样
 - `libswscale`：视频像素格式转换
-- SDL audio callback：PCM 输出
+- `IAudioOutput`：PCM 输出（SDL 后端通过音频回调拉取）
 
 ## 4. 线程模型
 
@@ -76,10 +81,10 @@
 - 将视频 frame 转成 RGBA frame
 - 把结果压入各自队列
 
-### 4.3 SDL 音频回调
+### 4.3 音频输出回调
 
-- 从音频 chunk 队列读取 PCM
-- 将数据写入 SDL 输出缓冲
+- `IAudioOutput` 在设备线程回调到 Player
+- Player 从音频 chunk 队列读取 PCM 并写入输出缓冲
 - 同步更新“当前正在播放的媒体时间”
 
 这种设计比 ffplay 的完整多线程模型简单，更适合作为学习版本，但已经能体现播放器核心链路。
@@ -143,6 +148,7 @@
 
 - 结构清晰，便于继续扩展
 - 控件不追求复杂样式，优先服务学习
+- Phase 2 再用 Qt 6 Quick/QML 做更完整的产品 UI，本阶段保持现有 SDL 视觉不变
 
 ## 9. 支持范围说明
 

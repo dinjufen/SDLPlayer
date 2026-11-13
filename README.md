@@ -1,6 +1,6 @@
 # SDL + FFmpeg 学习型播放器
 
-这是一个从零搭建的 C++ 音视频播放器示例工程，面向 Windows + MSVC 学习场景，使用 `SDL2 + FFmpeg` 完成视频渲染、音频输出、媒体解析、进度控制和基础信息展示。
+这是一个从零搭建的 C++ 音视频播放器示例工程，面向 Windows 与 macOS，使用 `SDL2 + FFmpeg` 完成视频渲染、音频输出、媒体解析、进度控制和基础信息展示。播放器核心与平台壳已经拆开，后续 Phase 2 计划用 Qt 6 Quick/QML 替换当前 SDL 壳，但不改 FFmpeg 解码/同步引擎。
 
 ## 当前能力
 
@@ -12,7 +12,7 @@
 - 鼠标拖动进度条 seek
 - 倍速切换（0.5x / 1.0x / 1.25x / 1.5x / 2.0x）
 - 显示基础媒体信息
-- SDL 自绘简洁 UI，操作习惯参考常见桌面播放器
+- SDL 自绘简洁 UI，操作习惯参考常见桌面播放器（Windows / macOS 功能对等）
 
 ## 说明
 
@@ -22,16 +22,17 @@
 
 ## 推荐环境
 
-- Visual Studio 2022 或 2026
+- Windows：Visual Studio 2022 或 2026
+- macOS：Apple Clang + Ninja，优先 Apple Silicon（`arm64-osx`）
 - CMake 3.25+
-- vcpkg
+- vcpkg（两端同一套 `find_package` 依赖）
 
 推荐版本方向：
 
 - SDL2 2.30+
 - FFmpeg 7.x
 
-这里选择 SDL2 而不是 SDL3，是为了让首版播放器先基于更成熟、资料更多的 API 跑通核心链路，同时保持依赖版本尽量新且稳定。
+这里选择 SDL2 而不是 SDL3，是为了让首版播放器先基于更成熟、资料更多的 API 跑通核心链路，同时保持依赖版本尽量新且稳定。当前 UI 仍是学习型 SDL 自绘；更精美的跨平台界面会在 Phase 2 用 Qt 6 QML 重做。
 
 ## 构建步骤
 
@@ -87,6 +88,24 @@
    # .\build\msvc2022-debug\Debug\SDLPlayer.exe
    ```
 
+6. macOS（Apple Silicon，推荐）同样使用 vcpkg：
+
+   ```bash
+   export VCPKG_ROOT="<your-vcpkg-path>"
+   cmake --preset macos-arm64-debug
+   cmake --build --preset build-macos-arm64-debug
+   ctest --preset test-macos-arm64-debug
+   ./build/macos-arm64-debug/SDLPlayer [path-to-media-file]
+   ```
+
+   Intel Mac 可改用 `macos-x64-debug` / `build-macos-x64-debug` / `test-macos-x64-debug`。
+
+   如果不想依赖 `VCPKG_ROOT`，同样复制 `CMakeUserPresets.json.example` 为 `CMakeUserPresets.json`，并把 vcpkg 路径改成本地路径，然后使用 `macos-arm64-debug-local` 等 `-local` preset。
+
+   当前里程碑输出的是普通可执行文件，不是 `.app` 包。vcpkg 构建时通常会把 `vcpkg_installed/arm64-osx/lib` 写进 rpath；如果把二进制单独拷走后找不到 dylib，把对应库拷到可执行文件同目录，或设置 `DYLD_FALLBACK_LIBRARY_PATH` 指向 vcpkg 的 `lib` 目录。
+
+   Linux 不是产品目标。若只是在 Linux 上跑测试，可以使用 `linux-ninja-debug`（vcpkg）或 `linux-system-debug`（系统包 + 仓库自带的 `cmake/FindFFMPEG.cmake`）。
+
 如果在 `cmake` 阶段看到 “找不到 SDL2 / SDL2_ttf / FFMPEG” 一类错误，通常说明：
 
 - `VCPKG_ROOT` 没有设置
@@ -132,4 +151,4 @@
 - 补充带样片的媒体打开、seek、EOF 与纯音频回归测试
 - 增强音视频同步策略
 - 增加播放列表、音量控制、帧步进等功能
-- 进一步拆分 UI 与核心播放器模块
+- 在播放器核心保持稳定后，进入 Phase 2：用 Qt 6 Quick/QML 替换 SDL 壳

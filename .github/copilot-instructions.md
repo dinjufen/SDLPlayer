@@ -2,7 +2,7 @@
 
 ## Build, run, test, and lint
 
-- This project targets **Windows + MSVC only** and uses **C++20**, **CMake 3.25+**, and **vcpkg**.
+- This project targets **Windows and macOS** and uses **C++20**, **CMake 3.25+**, and **vcpkg**. See AGENTS.md for the current build commands and architecture.
 - In PowerShell, either set `VCPKG_ROOT` in the same terminal session before configuring:
 
 ```powershell
@@ -31,8 +31,7 @@ cmake --build --preset build-msvc2026-debug-local
 .\build\msvc2026-debug\Debug\SDLPlayer.exe [path-to-media-file]
 ```
 
-- There is **no automated test suite** and **no lint configuration** in this repository.
-- There is no single-test command because no test framework is checked in.
+- Automated tests are run with CTest presets such as `test-msvc2026-debug` or `test-macos-arm64-debug`.
 
 ## High-level architecture
 

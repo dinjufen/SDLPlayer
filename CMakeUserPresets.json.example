@@ -35,6 +35,54 @@
       "inherits": "local-vcpkg",
       "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/build/msvc2026-release"
+    },
+    {
+      "name": "macos-arm64-debug-local",
+      "inherits": "local-vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-arm64-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-arm64-release-local",
+      "inherits": "local-vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-arm64-release",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "arm64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+    {
+      "name": "macos-x64-debug-local",
+      "inherits": "local-vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/macos-x64-debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-osx",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
     }
   ],
   "buildPresets": [
@@ -57,6 +105,18 @@
       "name": "build-msvc2026-release-local",
       "configurePreset": "msvc2026-release-local",
       "configuration": "Release"
+    },
+    {
+      "name": "build-macos-arm64-debug-local",
+      "configurePreset": "macos-arm64-debug-local"
+    },
+    {
+      "name": "build-macos-arm64-release-local",
+      "configurePreset": "macos-arm64-release-local"
+    },
+    {
+      "name": "build-macos-x64-debug-local",
+      "configurePreset": "macos-x64-debug-local"
     }
   ],
   "testPresets": [
@@ -88,6 +148,27 @@
       "name": "test-msvc2026-release-local",
       "configurePreset": "msvc2026-release-local",
       "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-arm64-debug-local",
+      "configurePreset": "macos-arm64-debug-local",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-arm64-release-local",
+      "configurePreset": "macos-arm64-release-local",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "test-macos-x64-debug-local",
+      "configurePreset": "macos-x64-debug-local",
       "output": {
         "outputOnFailure": true
       }
