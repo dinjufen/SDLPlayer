@@ -148,7 +148,7 @@
 
 - 结构清晰，便于继续扩展
 - 控件不追求复杂样式，优先服务学习
-- Phase 2 再用 Qt 6 Quick/QML 做更完整的产品 UI，本阶段保持现有 SDL 视觉不变
+- 产品界面见第 11 节的 Qt 6 Quick 壳；SDL 自绘作为遗留界面保留
 
 ## 9. 支持范围说明
 
@@ -171,3 +171,7 @@
 - `OverlayUi`
 
 等项目从学习版走向更完整的工程后，再逐步把当前 `Player.cpp` 中的逻辑拆散，会比一开始就过度抽象更稳妥。
+
+## 11. 产品壳：Qt 6 Quick / QML
+
+产品界面已切换到 Qt 6.9 Quick。`player::Player` 与 `IAudioOutput` / `IVideoOutput` 保持不变；Qt 侧实现 `QtAudioOutput`（QAudioSink 拉取 PCM）和 `QtVideoOutput`（拷贝 BGRA 帧），由 `VideoItem` 做比例 letterbox。SDL 壳作为 `SDLPlayerSdl` 保留。构建方式与界面细节见 `docs/qt-shell.md`。

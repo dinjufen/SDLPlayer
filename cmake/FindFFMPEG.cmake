@@ -12,16 +12,33 @@ if(PkgConfig_FOUND)
     pkg_check_modules(PC_LIBSWSCALE QUIET libswscale)
 endif()
 
-find_path(FFMPEG_INCLUDE_DIR
-    NAMES libavformat/avformat.h
-    HINTS ${PC_LIBAVFORMAT_INCLUDEDIR} ${PC_LIBAVFORMAT_INCLUDE_DIRS}
+# Homebrew prefixes are included so macOS Qt presets can find FFmpeg without vcpkg.
+set(_ffmpeg_include_hints
+    ${PC_LIBAVFORMAT_INCLUDEDIR}
+    ${PC_LIBAVFORMAT_INCLUDE_DIRS}
+    /opt/homebrew/include
+    /opt/homebrew/opt/ffmpeg/include
+    /usr/local/include
+    /usr/local/opt/ffmpeg/include
+)
+set(_ffmpeg_library_hints
+    ${PC_LIBAVFORMAT_LIBRARY_DIRS}
+    /opt/homebrew/lib
+    /opt/homebrew/opt/ffmpeg/lib
+    /usr/local/lib
+    /usr/local/opt/ffmpeg/lib
 )
 
-find_library(FFMPEG_libavformat_LIBRARY NAMES avformat HINTS ${PC_LIBAVFORMAT_LIBRARY_DIRS})
-find_library(FFMPEG_libavcodec_LIBRARY NAMES avcodec HINTS ${PC_LIBAVCODEC_LIBRARY_DIRS})
-find_library(FFMPEG_libavutil_LIBRARY NAMES avutil HINTS ${PC_LIBAVUTIL_LIBRARY_DIRS})
-find_library(FFMPEG_libswresample_LIBRARY NAMES swresample HINTS ${PC_LIBSWRESAMPLE_LIBRARY_DIRS})
-find_library(FFMPEG_libswscale_LIBRARY NAMES swscale HINTS ${PC_LIBSWSCALE_LIBRARY_DIRS})
+find_path(FFMPEG_INCLUDE_DIR
+    NAMES libavformat/avformat.h
+    HINTS ${_ffmpeg_include_hints}
+)
+
+find_library(FFMPEG_libavformat_LIBRARY NAMES avformat HINTS ${_ffmpeg_library_hints})
+find_library(FFMPEG_libavcodec_LIBRARY NAMES avcodec HINTS ${_ffmpeg_library_hints})
+find_library(FFMPEG_libavutil_LIBRARY NAMES avutil HINTS ${_ffmpeg_library_hints})
+find_library(FFMPEG_libswresample_LIBRARY NAMES swresample HINTS ${_ffmpeg_library_hints})
+find_library(FFMPEG_libswscale_LIBRARY NAMES swscale HINTS ${_ffmpeg_library_hints})
 
 if(FFMPEG_libavformat_LIBRARY)
     get_filename_component(FFMPEG_LIBRARY_DIRS "${FFMPEG_libavformat_LIBRARY}" DIRECTORY)
